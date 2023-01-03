@@ -55,7 +55,7 @@ def get_images():
             img = img.get_attribute('src')
             answer = solver.coordinates(img)
             print(img)
-            time.sleep(60)
+            time.sleep(50)
             captcha = requests.get(
                 url=f'http://rucaptcha.com/res.php?key=1adfbaa28824f290e450fccf22125fac&action=get&id={answer.get("captchaId", 0)}&json=1')
 
@@ -70,10 +70,10 @@ def get_images():
             y4 = captcha.json()['request'][3].get('y', 0)
 
             captcha = browser.find_element(By.ID, 'pcaptcha-container').find_element(By.TAG_NAME, 'img')
-            ActionChains(browser).move_to_element_with_offset(captcha,-130, -165).move_by_offset(x1, y1).click().perform()
-            ActionChains(browser).move_to_element_with_offset(captcha,-130, -165).move_by_offset(x2, y2).click().perform()
-            ActionChains(browser).move_to_element_with_offset(captcha,-130, -165).move_by_offset(x3, y3).click().perform()
-            ActionChains(browser).move_to_element_with_offset(captcha,-130, -165).move_by_offset(x4, y4).click().perform()
+            ActionChains(browser).move_to_element_with_offset(captcha,-135, -175).move_by_offset(x1, y1).click().perform()
+            ActionChains(browser).move_to_element_with_offset(captcha,-135, -175).move_by_offset(x2, y2).click().perform()
+            ActionChains(browser).move_to_element_with_offset(captcha,-135, -175).move_by_offset(x3, y3).click().perform()
+            ActionChains(browser).move_to_element_with_offset(captcha,-135, -175).move_by_offset(x4, y4).click().perform()
             time.sleep(15)
 
 
