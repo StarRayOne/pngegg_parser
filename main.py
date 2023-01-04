@@ -35,63 +35,74 @@ def get_images():
             all_download_links.extend([row['link_download']])
     print(len(all_links))
     start_time = time.time()
+    count = 0
     for link in range(len(all_links)):
+        print(f'Скачали фоток {count}')
+        count += 1
+        if count == 100:
+            break
         try:
             response = requests.get(url=all_links[link], headers=fake_head)
             soup = BeautifulSoup(response.text, 'lxml')
+            #игфо объекта
             resolution = soup.find(class_="info_detail").text
-            # селениум нужно интегрировать с анти капчей и заносить картинки в зип
-            # link_down = soup.find('a', class_="dld_btn bgcolor")['href'] # доделать селениум
-
             download_response = requests.get(url=all_download_links[link])
             download_soup = BeautifulSoup(download_response.text, 'lxml')
+            flag = True
             if 'I am human ' in download_soup.text:
+                while flag == True:
+                    with webdriver.Chrome() as browser:
+                        browser.get(all_download_links[link])
+                        i_human = browser.find_element(By.ID, 'imhuman')
+                        browser.execute_script("return arguments[0].scrollIntoView(true);", i_human)
+                        browser.execute_script("window.scrollBy(0,-150)")
+                        browser.find_element(By.ID, 'imhuman').click()
+                        time.sleep(2)
+                        img = browser.find_element(By.ID, 'pcaptcha').find_element(By.TAG_NAME, 'img')
+                        img = img.get_attribute('src')
+                        answer = solver.coordinates(img)
+                        time.sleep(10)
+                        while True: # добавить иф если капчу сделали неправильно - пропускаем
+                            captcha = requests.get(
+                                url=f'http://rucaptcha.com/res.php?key=1adfbaa28824f290e450fccf22125fac&action=get&id={answer.get("captchaId", 0)}&json=1')
+                            if captcha.json()['request'] == 'CAPCHA_NOT_READY':
+                                print(f'Капча #{count} не готова!')
+                                time.sleep(10)
+                            else:
+                                print(f"Капча готова!")
+                                x1 = captcha.json()['request'][0].get('x', 0)
+                                y1 = captcha.json()['request'][0].get('y', 0)
+                                x2 = captcha.json()['request'][1].get('x', 0)
+                                y2 = captcha.json()['request'][1].get('y', 0)
+                                x3 = captcha.json()['request'][2].get('x', 0)
+                                y3 = captcha.json()['request'][2].get('y', 0)
+                                x4 = captcha.json()['request'][3].get('x', 0)
+                                y4 = captcha.json()['request'][3].get('y', 0)
+
+                                captcha = browser.find_element(By.ID, 'pcaptcha-container').find_element(By.TAG_NAME, 'img')
+                                ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x1,
+                                                                                                                      y1).click().perform()
+                                ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x2,
+                                                                                                                      y2).click().perform()
+                                ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x3,
+                                                                                                                      y3).click().perform()
+                                ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x4,
+                                                                                                                      y4).click().perform()
+                                time.sleep(5)
+                                if browser.find_element(By.ID, 'download_loader'):
+                                    flag = False
+                                    break
+                                else:
+                                    flag = True
+                                    break
+
+            else:
                 with webdriver.Chrome() as browser:
                     browser.get(all_download_links[link])
-                    i_human = browser.find_element(By.ID, 'imhuman')
-                    browser.execute_script("return arguments[0].scrollIntoView(true);", i_human)
-                    browser.execute_script("window.scrollBy(0,-150)")
-                    browser.find_element(By.ID, 'imhuman').click()
-                    time.sleep(2)
-                    img = browser.find_element(By.ID, 'pcaptcha').find_element(By.TAG_NAME, 'img')
-                    img = img.get_attribute('src')
-                    answer = solver.coordinates(img)
-                    time.sleep(10)
-                    while True:
-                        captcha = requests.get(
-                            url=f'http://rucaptcha.com/res.php?key=dfc81ba1ac4fde79935f0759308a3b4f&action=get&id={answer.get("captchaId", 0)}&json=1')
-                        if captcha.json()['request'] == 'CAPCHA_NOT_READY':
-                            print('Капча не готова')
-                            time.sleep(10)
-                        else:
-                            print(f"Парсер 1: {captcha.json()['request']}")
-                            x1 = captcha.json()['request'][0].get('x', 0)
-                            y1 = captcha.json()['request'][0].get('y', 0)
-                            x2 = captcha.json()['request'][1].get('x', 0)
-                            y2 = captcha.json()['request'][1].get('y', 0)
-                            x3 = captcha.json()['request'][2].get('x', 0)
-                            y3 = captcha.json()['request'][2].get('y', 0)
-                            x4 = captcha.json()['request'][3].get('x', 0)
-                            y4 = captcha.json()['request'][3].get('y', 0)
-
-                            captcha = browser.find_element(By.ID, 'pcaptcha-container').find_element(By.TAG_NAME, 'img')
-                            ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x1,
-                                                                                                                  y1).click().perform()
-                            ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x2,
-                                                                                                                  y2).click().perform()
-                            ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x3,
-                                                                                                                  y3).click().perform()
-                            ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(x4,
-                                                                                                                  y4).click().perform()
-                            time.sleep(4)
-                            break
-
-                    else:
-                        with webdriver.Chrome() as browser:
-                            browser.get(all_download_links[link])
-                            time.sleep(4)
+                    time.sleep(5)
         except:
             pass
+
     print('Скачивание закончили!')
     print("--- %s секунд ---" % (time.time() - start_time))
 
