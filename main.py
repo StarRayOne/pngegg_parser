@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
+import os
 
 import lxml
 
@@ -39,18 +40,18 @@ def get_images():
             writer.writerow(["number", 'image_name', 'link', 'name', 'tags', 'resolution'])
     print(len(all_links))
     start_time = time.time()
-    count = 0
+    count = 1
     for link in range(len(all_links)):
-        print(f'Скачали фоток {count}')
         if count == 1000:
             break
+        print(f'Скачиваем фото {count}')
         try:
             response = requests.get(url=all_links[link], headers=fake_head)
             soup = BeautifulSoup(response.text, 'lxml')
             # игфо объекта
             resolution = soup.find(class_="info_detail").text
             name = soup.find(class_='view_h1 overflow').text
-            count += 1
+
             tags = [i.text for i in soup.find(class_='tag_ul').find_all('li')]
             preview = soup.find('figure').find('img')['src']
             download_preview = requests.get(url=preview, stream=True)
@@ -63,6 +64,11 @@ def get_images():
                 writer = csv.writer(file, delimiter=';')
                 writer.writerow([count, f'pngimage_{count}', all_links[link], name, tags, resolution])
             flag = True
+            directory1 = '/home/hack/Загрузки/'
+            directory2 = '/home/hack/PycharmProjects/1. Заказы фриланс в работе/png_parser/preview/'
+            preview = [file for file in os.listdir(directory2) if
+                       os.path.isfile(f'{directory2}/{file}')]
+
             while True:
                 if flag == False:
                     break
@@ -84,12 +90,8 @@ def get_images():
                             if captcha.json()['request'] == 'CAPCHA_NOT_READY':
                                 print(f'Капча #{count} не готова!')
                                 time.sleep(10)
-                            elif len(captcha.json()['request']) != 4:
-                                print('Не та капча!')
-                                time.sleep(5)
                             else:
                                 print(f"Капча готова!")
-                                print(len(captcha.json()['request']))
                                 x1 = captcha.json()['request'][0].get('x', 0)
                                 y1 = captcha.json()['request'][0].get('y', 0)
                                 x2 = captcha.json()['request'][1].get('x', 0)
@@ -113,23 +115,54 @@ def get_images():
                                 ActionChains(browser).move_to_element_with_offset(captcha, -135, -175).move_by_offset(
                                     x4,
                                     y4).click().perform()
-                                time.sleep(5)
+                                time.sleep(15)
                                 download_check = browser.find_element(By.CLASS_NAME, 'download_loader')
+                                images = [file for file in os.listdir(directory1) if
+                                          os.path.isfile(f'{directory1}/{file}')]
+
                                 if download_check.text == 'Your download will start shortly, please wait...':
+                                    flag = True
+                                    break
+                                elif len(images) == len(preview):
+                                    print(f'Скачал фото #{count}')
                                     flag = False
                                     break
                                 else:
-                                    flag = True
+                                    print('Не успеваю скачать фото после ввода капчи... Жду ещё раз!')
+                                    time.sleep(60)
+                                    images = [file for file in os.listdir(directory1) if
+                                              os.path.isfile(f'{directory1}/{file}')]
+                                    if len(images) != len(preview):
+                                        print(
+                                            'Даже после 60 секунд ожидания не успеваю скачать фото после ввода капчи!')
+                                        flag = True
+                                        break
+                                    flag = False
                                     break
-                            break
 
                 else:
                     with webdriver.Chrome() as browser:
                         browser.get(all_download_links[link])
-                        flag = True
-                        time.sleep(5)
+                        flag = False
+                        time.sleep(15)
+                        images = [file for file in os.listdir(directory1) if
+                                  os.path.isfile(f'{directory1}/{file}')]
+                    if len(images) == len(preview):
+                        pass
+                    else:
+                        print('Не успеваю скачать фото без капчи ')
+                        with webdriver.Chrome() as browser:
+                            browser.get(all_download_links[link])
+                            flag = False
+                            time.sleep(60)
+                        images = [file for file in os.listdir(directory1) if
+                                  os.path.isfile(f'{directory1}/{file}')]
+                        if len(images) != len(preview):
+                            flag = True
+
         except:
             pass
+        count += 1
 
     print('Скачивание закончили!')
     print("--- %s секунд ---" % (time.time() - start_time))
